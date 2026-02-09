@@ -110,6 +110,23 @@ impl SudokuCore {
         serde_wasm_bindgen::to_value(&conflicts).unwrap()
     }
 
+    pub fn get_hint_value(&self, index: usize) -> u8 {
+        if index >= 81 { return 0; }
+        
+        let mut shadow_core = SudokuCore {
+            cells: self.cells.clone(),
+        };
+        
+        // Remove current value to let the solver find the correct one
+        shadow_core.cells[index] = 0;
+        
+        if shadow_core.solve() {
+            shadow_core.cells[index]
+        } else {
+            0
+        }
+    }
+
     // Helper methods
     fn backtrack(&mut self, index: usize) -> bool {
         if index == 81 {
