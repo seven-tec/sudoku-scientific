@@ -28,12 +28,17 @@ impl SudokuCore {
         }
     }
 
+    pub fn set_cell(&mut self, index: usize, value: u8) {
+        if index < 81 && value <= 9 {
+            self.cells[index] = value;
+        }
+    }
+
     pub fn solve(&mut self) -> bool {
         self.backtrack(0)
     }
 
     pub fn generate_with_seed(&mut self, seed_str: &str, difficulty: &str) -> JsValue {
-        // Simple hash for seed string
         let mut seed = [0u8; 32];
         let bytes = seed_str.as_bytes();
         for i in 0..bytes.len().min(32) {
@@ -41,28 +46,22 @@ impl SudokuCore {
         }
         
         let mut rng = StdRng::from_seed(seed);
-        
-        // 1. Start with empty board
         self.cells = vec![0; 81];
         
-        // 2. Fill diagonal 3x3 blocks (independent)
         for i in (0..9).step_by(3) {
             self.fill_box(i, i, &mut rng);
         }
         
-        // 3. Solve the rest to get a complete valid board
         self.solve();
         
-        // 4. Remove digits based on difficulty
         let remove_count = match difficulty {
-            "Zen" => 30,    // Easy
-            "Focus" => 45,  // Medium
-            "Master" => 55, // Hard
+            "Zen" => 30,
+            "Focus" => 45,
+            "Master" => 55,
             _ => 40,
         };
         
         self.remove_digits(remove_count, &mut rng);
-
         self.get_board()
     }
 
@@ -74,21 +73,15 @@ impl SudokuCore {
         let row = index / 9;
         let col = index % 9;
         
-        // Check row
         for i in 0..9 {
             if i != col && self.cells[row * 9 + i] == value {
                 return false;
             }
-        }
-        
-        // Check column
-        for i in 0..9 {
             if i != row && self.cells[i * 9 + col] == value {
                 return false;
             }
         }
         
-        // Check 3x3 box
         let start_row = (row / 3) * 3;
         let start_col = (col / 3) * 3;
         for i in 0..3 {
@@ -104,17 +97,27 @@ impl SudokuCore {
         true
     }
 
-    // Helper methods (not exported to JS)
-    
+    pub fn get_conflicts(&self) -> JsValue {
+        let mut conflicts = vec![false; 81];
+        for i in 0..81 {
+            let val = self.cells[i];
+            if val != 0 {
+                if !self.validate_move(i, val) {
+                    conflicts[i] = true;
+                }
+            }
+        }
+        serde_wasm_bindgen::to_value(&conflicts).unwrap()
+    }
+
+    // Helper methods
     fn backtrack(&mut self, index: usize) -> bool {
         if index == 81 {
             return true;
         }
-        
         if self.cells[index] != 0 {
             return self.backtrack(index + 1);
         }
-        
         for num in 1..=9 {
             if self.is_safe(index, num) {
                 self.cells[index] = num;
@@ -124,20 +127,17 @@ impl SudokuCore {
                 self.cells[index] = 0;
             }
         }
-        
         false
     }
     
     fn is_safe(&self, index: usize, num: u8) -> bool {
         let row = index / 9;
         let col = index % 9;
-        
         for i in 0..9 {
             if self.cells[row * 9 + i] == num || self.cells[i * 9 + col] == num {
                 return false;
             }
         }
-        
         let start_row = (row / 3) * 3;
         let start_col = (col / 3) * 3;
         for i in 0..3 {
@@ -147,7 +147,6 @@ impl SudokuCore {
                 }
             }
         }
-        
         true
     }
     

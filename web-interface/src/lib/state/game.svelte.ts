@@ -38,9 +38,18 @@ class GameState {
 
         if (!this.load()) {
             this.newGame('Zen');
+        } else {
+            // Sincronizar el engine con lo cargado de LocalStorage
+            this.syncEngine();
         }
 
         this.startTimer();
+    }
+
+    private syncEngine() {
+        if (!this.engine) return;
+        const raw = this.current.board.map(c => c.value === null ? 0 : (c.value as number));
+        this.engine.set_board(Uint8Array.from(raw));
     }
 
     setupFocusListeners() {
@@ -89,9 +98,9 @@ class GameState {
             error: false
         }));
 
-
         this.current.difficulty = difficulty;
         this.current.elapsedTime = 0;
+        this.syncEngine(); // Asegurar que el engine esté sincronizado después de un newGame
         this.save();
     }
 
@@ -99,17 +108,26 @@ class GameState {
         if (!this.current.board[index].isInitial && this.engine) {
             const numValue = value === null ? 0 : value;
 
-            // Validamos con el engine de Rust
-            const isValid = numValue === 0 || this.engine.validate_move(index, numValue);
-
+            // Actualizar estado local
             this.current.board[index].value = value as any;
-            this.current.board[index].error = !isValid;
+
+            // Sincronizar con el engine de Rust
+            this.engine.set_cell(index, numValue);
+
+            // Obtener conflictos de TODO el tablero
+            const conflicts = this.engine.get_conflicts() as boolean[];
+
+            // Actualizar errores en todas las celdas
+            this.current.board.forEach((cell, i) => {
+                cell.error = conflicts[i];
+            });
 
             // Al poner un valor, limpiamos los candidatos
             if (value !== null) {
                 this.current.board[index].candidates = [];
             }
             this.save();
+
             if (this.isSolved) {
                 this.stopTimer();
             }
