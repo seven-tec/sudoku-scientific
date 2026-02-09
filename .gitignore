@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+.svelte-kit/
+dist/
+
+# Rust / WASM
+target/
+**/*.wasm
+**/*.js
+**/*.d.ts
+!web-interface/src/lib/wasm/*.js
+!web-interface/src/lib/wasm/*.d.ts
+!web-interface/src/lib/wasm/*.wasm
+# Actually, we usually ignore generated WASM in the final repo, but for this project 
+# the user might want them included for easier deployment or excluded to keep it clean.
+# I'll exclude them but provide a script to generate them.
+
+# IDEs
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OSSystem
+.DS_Store
+Thumbs.db
+
+# Project Specific
+help.txt
+.system_generated/
+brain/

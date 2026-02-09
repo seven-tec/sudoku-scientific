@@ -1,0 +1,10 @@
+{
+    "name": "sudoku-scientific-workspace",
+    "private": true,
+    "scripts": {
+        "build:core": "wasm-pack build core-engine --target web --out-dir ../web-interface/src/lib/wasm"
+    },
+    "devDependencies": {
+        "wasm-pack": "^0.14.0"
+    }
+}
