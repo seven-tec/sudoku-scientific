@@ -12,8 +12,15 @@
   function handleKeydown(e: KeyboardEvent) {
     if (selectedId === null) return;
 
-    if (e.key >= "1" && e.key <= "9") {
-      const val = parseInt(e.key);
+    // Usar e.code para detectar números independientemente de Shift (e.g., Shift+1 es "!" en e.key, pero "Digit1" en e.code)
+    let val: number | null = null;
+    if (e.code.startsWith("Digit")) {
+      val = parseInt(e.code.slice(5));
+    } else if (e.code.startsWith("Numpad")) {
+      val = parseInt(e.code.slice(6));
+    }
+
+    if (val !== null && val >= 1 && val <= 9) {
       if (e.shiftKey) {
         game.toggleCandidate(selectedId, val);
       } else {
