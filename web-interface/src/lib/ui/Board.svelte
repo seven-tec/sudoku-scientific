@@ -1,6 +1,7 @@
 <script lang="ts">
   import { game } from "../state/game.svelte";
   import Cell from "./Cell.svelte";
+  import HintButton from "./HintButton.svelte";
 
   let selectedId = $state<number | null>(null);
 
@@ -40,19 +41,22 @@
     {/each}
   </div>
 
-  <div class="controls">
-    <button
-      onclick={() => game.newGame("Zen")}
-      class:active={game.current.difficulty === "Zen"}>Zen</button
-    >
-    <button
-      onclick={() => game.newGame("Focus")}
-      class:active={game.current.difficulty === "Focus"}>Focus</button
-    >
-    <button
-      onclick={() => game.newGame("Master")}
-      class:active={game.current.difficulty === "Master"}>Master</button
-    >
+  <div class="controls-group">
+    <div class="controls">
+      <button
+        onclick={() => game.newGame("Zen")}
+        class:active={game.current.difficulty === "Zen"}>Zen</button
+      >
+      <button
+        onclick={() => game.newGame("Focus")}
+        class:active={game.current.difficulty === "Focus"}>Focus</button
+      >
+      <button
+        onclick={() => game.newGame("Master")}
+        class:active={game.current.difficulty === "Master"}>Master</button
+      >
+    </div>
+    <HintButton {selectedId} />
   </div>
 </div>
 
@@ -87,6 +91,12 @@
 
   .border-bottom :global(.cell) {
     border-bottom: 3px solid lch(35 5 240) !important;
+  }
+
+  .controls-group {
+    display: flex;
+    align-items: center;
+    gap: 3rem;
   }
 
   .controls {

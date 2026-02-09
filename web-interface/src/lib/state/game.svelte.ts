@@ -10,7 +10,8 @@ class GameState {
         difficulty: 'Zen',
         isPaused: false,
         elapsedTime: 0,
-        seed: Math.random().toString(36).substring(2, 9)
+        seed: Math.random().toString(36).substring(2, 9),
+        hintsRemaining: 0
     });
 
     // Propiedad derivada para el progreso (0 a 100)
@@ -100,8 +101,24 @@ class GameState {
 
         this.current.difficulty = difficulty;
         this.current.elapsedTime = 0;
-        this.syncEngine(); // Asegurar que el engine esté sincronizado después de un newGame
+
+        // Inicializar pistas según la propuesta del usuario:
+        // Zen: 1, Focus: 2, Master: 3
+        this.current.hintsRemaining = difficulty === 'Zen' ? 1 : difficulty === 'Focus' ? 2 : 3;
+
+        this.syncEngine();
         this.save();
+    }
+
+    useHint(index: number) {
+        if (this.current.hintsRemaining > 0 && this.engine && !this.current.board[index].isInitial) {
+            const correctValue = this.engine.get_hint_value(index);
+            if (correctValue !== 0) {
+                this.makeMove(index, correctValue);
+                this.current.hintsRemaining -= 1;
+                this.save();
+            }
+        }
     }
 
     makeMove(index: number, value: number | null) {
@@ -156,7 +173,14 @@ class GameState {
         const saved = localStorage.getItem('sudoku_scientific_state');
         if (saved) {
             try {
-                this.current = JSON.parse(saved);
+                const data = JSON.parse(saved) as SudokuState;
+
+                // Migración: Si no tiene hintsRemaining (versión antigua), inicializar según dificultad
+                if (data.hintsRemaining === undefined) {
+                    data.hintsRemaining = data.difficulty === 'Zen' ? 1 : data.difficulty === 'Focus' ? 2 : 3;
+                }
+
+                this.current = data;
                 return true;
             } catch (e) {
                 console.error("Error al cargar estado:", e);

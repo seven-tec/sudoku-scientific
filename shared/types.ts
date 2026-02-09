@@ -18,4 +18,5 @@ export interface SudokuState {
   isPaused: boolean;
   elapsedTime: number;  // Tiempo en segundos para medir el estado de Flow
   seed: string;         // Semilla aleatoria para reproducir la misma partida
+  hintsRemaining: number;
 }
