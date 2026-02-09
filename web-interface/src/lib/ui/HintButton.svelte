@@ -6,13 +6,11 @@
 
     const hasHints = $derived(game.current.hintsRemaining > 0);
     const canUseOnSelected = $derived(
-        selectedId !== null &&
-            !game.current.board[selectedId]?.isInitial &&
-            game.current.board[selectedId]?.value === null,
+        selectedId !== null && !game.current.board[selectedId]?.isInitial,
     );
 
     function handleHint() {
-        if (selectedId !== null && hasHints) {
+        if (hasHints) {
             game.useHint(selectedId);
         }
     }
@@ -23,9 +21,9 @@
         <button
             class="hint-button"
             class:active={hasHints}
-            class:shake={hasHints && canUseOnSelected}
-            {...{ onclick: handleHint }}
-            disabled={!hasHints || selectedId === null || !canUseOnSelected}
+            class:shake={hasHints}
+            onclick={handleHint}
+            disabled={!hasHints}
             aria-label="Obtener pista"
         >
             <span class="icon">💡</span>

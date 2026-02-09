@@ -27,6 +27,7 @@ class GameState {
 
     engine: SudokuCore | null = null;
     timerInterval: any = null;
+    hasStarted = $state(false);
 
     constructor() {
         this.initEngine();
@@ -44,7 +45,7 @@ class GameState {
             this.syncEngine();
         }
 
-        this.startTimer();
+        // No iniciamos el timer aquí para esperar al primer movimiento
     }
 
     private syncEngine() {
@@ -57,12 +58,12 @@ class GameState {
         if (typeof window === 'undefined') return;
 
         window.addEventListener('focus', () => {
-            this.current.isPaused = false;
-            this.startTimer();
+            if (this.hasStarted && !this.current.isPaused) {
+                this.startTimer();
+            }
         });
 
         window.addEventListener('blur', () => {
-            this.current.isPaused = true;
             this.stopTimer();
         });
     }
@@ -101,6 +102,8 @@ class GameState {
 
         this.current.difficulty = difficulty;
         this.current.elapsedTime = 0;
+        this.hasStarted = false;
+        this.stopTimer();
 
         // Inicializar pistas según la propuesta del usuario:
         // Zen: 1, Focus: 2, Master: 3
@@ -110,11 +113,26 @@ class GameState {
         this.save();
     }
 
-    useHint(index: number) {
-        if (this.current.hintsRemaining > 0 && this.engine && !this.current.board[index].isInitial) {
-            const correctValue = this.engine.get_hint_value(index);
+    useHint(index: number | null) {
+        if (this.current.hintsRemaining <= 0 || !this.engine) return;
+
+        let targetIndex = index;
+
+        // Si no hay celda seleccionada, buscamos la primera vacía o con error
+        if (targetIndex === null) {
+            const firstEmpty = this.current.board.find(c => !c.isInitial && c.value === null);
+            if (firstEmpty) {
+                targetIndex = firstEmpty.id;
+            } else {
+                const firstError = this.current.board.find(c => !c.isInitial && c.error);
+                if (firstError) targetIndex = firstError.id;
+            }
+        }
+
+        if (targetIndex !== null && !this.current.board[targetIndex].isInitial) {
+            const correctValue = this.engine.get_hint_value(targetIndex);
             if (correctValue !== 0) {
-                this.makeMove(index, correctValue);
+                this.makeMove(targetIndex, correctValue);
                 this.current.hintsRemaining -= 1;
                 this.save();
             }
@@ -123,6 +141,10 @@ class GameState {
 
     makeMove(index: number, value: number | null) {
         if (!this.current.board[index].isInitial && this.engine) {
+            if (!this.hasStarted) {
+                this.hasStarted = true;
+                this.startTimer();
+            }
             const numValue = value === null ? 0 : value;
 
             // Actualizar estado local
