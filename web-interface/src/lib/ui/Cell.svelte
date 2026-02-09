@@ -1,21 +1,32 @@
 <script lang="ts">
-  import type { Cell as CellType } from '../../../../shared/types';
-  
-  let { id, cell, onSelect }: { id: number, cell: CellType, onSelect: (id: number) => void } = $props();
+  import type { Cell as CellType } from "../../../../shared/types";
+  import { game } from "../state/game.svelte";
+
+  let {
+    id,
+    cell,
+    onSelect,
+  }: { id: number; cell: CellType; onSelect: (id: number) => void } = $props();
+
+  const isHinted = $derived(game.current.lastHintId === id);
 </script>
 
-<button 
+<button
   class="cell {cell.isInitial ? 'initial' : 'user-input'}"
   class:error={cell.error}
+  class:hinted={isHinted}
   onclick={() => onSelect(id)}
   aria-label="Celda {id}"
 >
-  <span class="value">{cell.value ?? ''}</span>
-  
+  <span class="value">{cell.value ?? ""}</span>
+
   {#if !cell.value}
     <div class="candidates-grid">
       {#each [1, 2, 3, 4, 5, 6, 7, 8, 9] as num}
-        <div class="candidate" class:visible={cell.candidates.includes(num as any)}>
+        <div
+          class="candidate"
+          class:visible={cell.candidates.includes(num as any)}
+        >
           {num}
         </div>
       {/each}
@@ -36,14 +47,14 @@
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     padding: 0;
-    font-family: 'Outfit', sans-serif;
+    font-family: "Outfit", sans-serif;
     outline: none;
   }
 
   .cell:hover {
     background: lch(20 5 240);
     z-index: 10;
-    box-shadow: 0 0 15px rgba(0,0,0,0.3);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
   }
 
   .cell:focus {
@@ -52,19 +63,25 @@
     z-index: 10;
   }
 
-  .initial { 
-    font-weight: 700; 
-    color: lch(95 2 240); 
+  .initial {
+    font-weight: 700;
+    color: lch(95 2 240);
   }
 
-  .user-input { 
-    color: lch(75 35 210); 
+  .user-input {
+    color: lch(75 35 210);
     font-weight: 400;
   }
 
-  .error { 
+  .error {
     background: lch(25 40 20) !important;
     color: lch(80 50 20) !important;
+  }
+
+  .hinted {
+    box-shadow: inset 0 0 15px lch(70 60 220 / 0.8) !important;
+    animation: hint-flash 1s alternate infinite ease-in-out;
+    z-index: 5;
   }
 
   .value {
@@ -72,8 +89,23 @@
   }
 
   @keyframes pop {
-    0% { transform: scale(0.5); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
+    0% {
+      transform: scale(0.5);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes hint-flash {
+    0% {
+      background: lch(70 40 220 / 0.1);
+    }
+    100% {
+      background: lch(70 40 220 / 0.4);
+    }
   }
 
   .candidates-grid {

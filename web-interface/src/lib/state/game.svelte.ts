@@ -11,7 +11,8 @@ class GameState {
         isPaused: false,
         elapsedTime: 0,
         seed: Math.random().toString(36).substring(2, 9),
-        hintsRemaining: 0
+        hintsRemaining: 0,
+        lastHintId: null
     });
 
     // Propiedad derivada para el progreso (0 a 100)
@@ -88,6 +89,9 @@ class GameState {
     newGame(difficulty: Difficulty) {
         if (!this.engine) return;
 
+        // Generar una nueva semilla para que cada "Nueva Partida" sea un reto distinto
+        this.current.seed = Math.random().toString(36).substring(2, 9);
+
         // Llamada al motor de Rust para generar el tablero
         const rawBoard = this.engine.generate_with_seed(this.current.seed, difficulty) as Uint8Array;
 
@@ -114,26 +118,60 @@ class GameState {
     }
 
     useHint(index: number | null) {
-        if (this.current.hintsRemaining <= 0 || !this.engine) return;
+        if (this.current.hintsRemaining <= 0 || !this.engine || this.isSolved) return;
 
-        let targetIndex = index;
+        let targetIndex: number | null = null;
 
-        // Si no hay celda seleccionada, buscamos la primera vacía o con error
+        // Función auxiliar para verificar si una celda NECESITA ayuda (vacía o con error)
+        const needsHelp = (idx: number) => {
+            const cell = this.current.board[idx];
+            if (cell.isInitial) return false;
+            if (cell.value === null) return true;
+
+            // Si tiene valor, verificamos si es incorrecto usando el engine de Rust
+            const correctValue = this.engine!.get_hint_value(idx);
+            return cell.value !== correctValue;
+        };
+
+        // Escenario 1: El usuario tiene algo seleccionado
+        if (index !== null && needsHelp(index)) {
+            targetIndex = index;
+        }
+
+        // Escenario 2: No hay selección O la selección ya es correcta
+        // Buscamos proactivamente dónde ayudar
         if (targetIndex === null) {
-            const firstEmpty = this.current.board.find(c => !c.isInitial && c.value === null);
-            if (firstEmpty) {
-                targetIndex = firstEmpty.id;
+            // Prioridad A: Celdas con errores visibles
+            const visibleError = this.current.board.find(c => !c.isInitial && c.error);
+            if (visibleError) {
+                targetIndex = visibleError.id;
             } else {
-                const firstError = this.current.board.find(c => !c.isInitial && c.error);
-                if (firstError) targetIndex = firstError.id;
+                // Prioridad B: Celdas vacías (buscamos la primera que el solver pueda resolver)
+                const emptyCell = this.current.board.find(c => !c.isInitial && c.value === null);
+                if (emptyCell) {
+                    targetIndex = emptyCell.id;
+                } else {
+                    // Prioridad C: Errores ocultos (valores que no son correctos pero no marcados como conflicto aún)
+                    const hiddenError = this.current.board.find(c => !c.isInitial && needsHelp(c.id));
+                    if (hiddenError) targetIndex = hiddenError.id;
+                }
             }
         }
 
-        if (targetIndex !== null && !this.current.board[targetIndex].isInitial) {
+        if (targetIndex !== null) {
             const correctValue = this.engine.get_hint_value(targetIndex);
             if (correctValue !== 0) {
                 this.makeMove(targetIndex, correctValue);
                 this.current.hintsRemaining -= 1;
+                this.current.lastHintId = targetIndex;
+
+                // Limpiar el highlight después de un momento
+                setTimeout(() => {
+                    if (this.current.lastHintId === targetIndex) {
+                        this.current.lastHintId = null;
+                    }
+                }, 2000);
+
                 this.save();
             }
         }

@@ -19,4 +19,5 @@ export interface SudokuState {
   elapsedTime: number;  // Tiempo en segundos para medir el estado de Flow
   seed: string;         // Semilla aleatoria para reproducir la misma partida
   hintsRemaining: number;
+  lastHintId: number | null; // ID de la última celda que recibió una pista para feedback visual
 }
