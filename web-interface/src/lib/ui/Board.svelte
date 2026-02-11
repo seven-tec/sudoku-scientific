@@ -20,6 +20,12 @@
       val = parseInt(e.code.slice(6));
     }
 
+    function formatTime(seconds: number) {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+    }
+
     if (val !== null && val >= 1 && val <= 9) {
       if (e.shiftKey) {
         game.toggleCandidate(selectedId, val);
@@ -52,16 +58,40 @@
     <div class="controls">
       <button
         onclick={() => game.newGame("Zen")}
-        class:active={game.current.difficulty === "Zen"}>Zen</button
+        class:active={game.current.difficulty === "Zen"}
       >
+        <span>Zen</span>
+        {#if game.current.bestStats.Zen}
+          <div class="best-stat">
+            🏆 {game.current.bestStats.Zen.score} | 👆 {game.current.bestStats.Zen
+              .moves}
+          </div>
+        {/if}
+      </button>
       <button
         onclick={() => game.newGame("Focus")}
-        class:active={game.current.difficulty === "Focus"}>Focus</button
+        class:active={game.current.difficulty === "Focus"}
       >
+        <span>Focus</span>
+        {#if game.current.bestStats.Focus}
+          <div class="best-stat">
+            🏆 {game.current.bestStats.Focus.score} | 👆 {game.current.bestStats
+              .Focus.moves}
+          </div>
+        {/if}
+      </button>
       <button
         onclick={() => game.newGame("Master")}
-        class:active={game.current.difficulty === "Master"}>Master</button
+        class:active={game.current.difficulty === "Master"}
       >
+        <span>Master</span>
+        {#if game.current.bestStats.Master}
+          <div class="best-stat">
+            🏆 {game.current.bestStats.Master.score} | 👆 {game.current.bestStats
+              .Master.moves}
+          </div>
+        {/if}
+      </button>
     </div>
     <HintButton {selectedId} />
   </div>
@@ -133,5 +163,13 @@
     color: white;
     border-color: lch(70 40 220);
     box-shadow: 0 0 20px lch(70 40 220 / 0.4);
+  }
+
+  .best-stat {
+    font-size: 0.65rem;
+    margin-top: 0.25rem;
+    opacity: 0.8;
+    font-weight: 400;
+    letter-spacing: 0;
   }
 </style>

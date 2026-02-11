@@ -10,9 +10,15 @@ class GameState {
         difficulty: 'Zen',
         isPaused: false,
         elapsedTime: 0,
+        moves: 0,
         seed: Math.random().toString(36).substring(2, 9),
         hintsRemaining: 0,
-        lastHintId: null
+        lastHintId: null,
+        bestStats: {
+            Zen: null,
+            Focus: null,
+            Master: null
+        }
     });
 
     // Propiedad derivada para el progreso (0 a 100)
@@ -24,6 +30,16 @@ class GameState {
 
     isSolved = $derived.by(() => {
         return this.progress === 100 && this.current.board.every(c => !c.error);
+    });
+
+    score = $derived.by(() => {
+        if (this.progress === 0) return 0;
+        // Fórmula de puntaje: base por progreso - penalización por tiempo y movimientos
+        // El tiempo y movimientos pesan menos en el puntaje total para mantener el enfoque en completar
+        const baseScore = this.progress * 100;
+        const timePenalty = Math.floor(this.current.elapsedTime / 10);
+        const movesPenalty = this.current.moves * 2;
+        return Math.max(0, baseScore - timePenalty - movesPenalty);
     });
 
     engine: SudokuCore | null = null;
@@ -106,6 +122,7 @@ class GameState {
 
         this.current.difficulty = difficulty;
         this.current.elapsedTime = 0;
+        this.current.moves = 0;
         this.hasStarted = false;
         this.stopTimer();
 
@@ -203,11 +220,28 @@ class GameState {
             if (value !== null) {
                 this.current.board[index].candidates = [];
             }
+            this.current.moves += 1;
             this.save();
 
             if (this.isSolved) {
                 this.stopTimer();
+                this.updateBestStats();
             }
+        }
+    }
+
+    private updateBestStats() {
+        const difficulty = this.current.difficulty;
+        const currentBest = this.current.bestStats[difficulty];
+        const currentScore = this.score;
+
+        if (!currentBest || currentScore > currentBest.score) {
+            this.current.bestStats[difficulty] = {
+                score: currentScore,
+                moves: this.current.moves,
+                time: this.current.elapsedTime
+            };
+            this.save();
         }
     }
 
@@ -238,6 +272,15 @@ class GameState {
                 // Migración: Si no tiene hintsRemaining (versión antigua), inicializar según dificultad
                 if (data.hintsRemaining === undefined) {
                     data.hintsRemaining = data.difficulty === 'Zen' ? 1 : data.difficulty === 'Focus' ? 2 : 3;
+                }
+
+                if (data.moves === undefined) data.moves = 0;
+                if (!data.bestStats) {
+                    data.bestStats = {
+                        Zen: null,
+                        Focus: null,
+                        Master: null
+                    };
                 }
 
                 this.current = data;

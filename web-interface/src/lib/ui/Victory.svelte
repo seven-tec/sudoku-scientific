@@ -38,7 +38,15 @@
 
             <div class="stats-summary">
                 <div class="stat">
-                    <span class="stat-label">Tiempo de Foco</span>
+                    <span class="stat-label">Puntaje</span>
+                    <span class="stat-value">{game.score}</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Toques</span>
+                    <span class="stat-value">{game.current.moves}</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Tiempo</span>
                     <span class="stat-value">{formatTime(finalTime)}</span>
                 </div>
                 <div class="stat">

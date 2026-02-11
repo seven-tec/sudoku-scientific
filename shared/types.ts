@@ -17,7 +17,9 @@ export interface SudokuState {
   difficulty: Difficulty;
   isPaused: boolean;
   elapsedTime: number;  // Tiempo en segundos para medir el estado de Flow
+  moves: number;        // Número de toques o intentos
   seed: string;         // Semilla aleatoria para reproducir la misma partida
   hintsRemaining: number;
   lastHintId: number | null; // ID de la última celda que recibió una pista para feedback visual
+  bestStats: Record<Difficulty, { score: number; moves: number; time: number } | null>;
 }

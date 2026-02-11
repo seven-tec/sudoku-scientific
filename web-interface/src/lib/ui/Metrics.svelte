@@ -10,6 +10,16 @@
 
 <div class="metrics-panel">
     <div class="metric">
+        <span class="label">Toques</span>
+        <span class="value">{game.current.moves}</span>
+    </div>
+
+    <div class="metric">
+        <span class="label">Puntaje</span>
+        <span class="value">{game.score}</span>
+    </div>
+
+    <div class="metric">
         <span class="label">Tiempo en Flow</span>
         <span class="value">{formatTime(game.current.elapsedTime)}</span>
     </div>
